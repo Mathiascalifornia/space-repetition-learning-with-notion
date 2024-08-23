@@ -21,9 +21,9 @@ class NotionAPIConnector:
         """
         api_key:str = NotionAPIConnector.load_env_key(key_to_load="api_workspace")
         database_id:str = NotionAPIConnector.load_env_key(key_to_load="database_id")
-        headers = NotionAPIConnector.get_headers(notion_api_key=api_key)
+        self.headers = NotionAPIConnector.get_headers(notion_api_key=api_key)
         
-        return NotionAPIConnector.get_raw_json_response_from_db_id_notion(headers=headers, database_id=database_id)
+        return NotionAPIConnector.get_raw_json_response_from_db_id_notion(headers=self.headers, database_id=database_id)
     
     @staticmethod
     def get_headers(notion_api_key:str,
