@@ -35,3 +35,4 @@ class DictQueueStructure:
     def insert_new_page(self, key_:str, new_page:dict):
         dequeue_:deque = self.based_dict.get(key_)
         dequeue_.appendleft(new_page)
+        

@@ -12,6 +12,6 @@ Fonctionnalités :
 - Il faut que chaque page principale ait sa propre structure (pour pouvoir appliquer le système à un sujet particulier). Idéalement, quelque chose de type dictionnaire pour avoir UNE seule structure permettant de gérer tout le système
 - Il faut pouvoir exclure un sujet de la liste (mais pas de manière persistante), par exemple au cas où je veuille me débarrasser de tout ce qui n'est pas informatique pour une session donnée, ou alors je ne veuille travailler que des sujets finances et dev perso. Il faut aussi que les sujets révisés soit quand même placé au début de la queue dans la structure principale
 - Il faut une structure principale où tout est mélangé
-- Il faut que l'utilisateur puisse refuser de voir une page. Dans ce cas, la page est renvoyer quelque part entre 5 et 10 places en arrière
+- Il faut que l'utilisateur puisse refuser de voir une page. Dans ce cas, la page est replacée aléatoirement dans le système
 - Il faut que la structure soit persistante (qu'on puisse la sauvegarder facilement) 
 - Il faut que la structure soit scalable (que le système puisse facilement s'adapter si des nouvelles pages sont détectés, sans modifier la structure en place). Les nouvelles pages seront placées au début de la structure (je pars du principe que si la page vient d'être crée c'est que le concept est frais dans ma tête) 
