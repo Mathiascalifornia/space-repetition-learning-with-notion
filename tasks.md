@@ -15,3 +15,17 @@ Fonctionnalités :
 - Il faut que l'utilisateur puisse refuser de voir une page. Dans ce cas, la page est replacée aléatoirement dans le système
 - Il faut que la structure soit persistante (qu'on puisse la sauvegarder facilement) 
 - Il faut que la structure soit scalable (que le système puisse facilement s'adapter si des nouvelles pages sont détectés, sans modifier la structure en place). Les nouvelles pages seront placées au début de la structure (je pars du principe que si la page vient d'être crée c'est que le concept est frais dans ma tête) 
+
+
+
+Main loop de ResultFetcher ; 
+
+- On itère dans les pages principales 
+- On récupère les blocks à l'intérieur de ces pages. 
+- Si jamais un block n'est pas un container, on le yield avec son URL et le nom de sa page principale d'appartenance
+- Si jamais un block contient une page, on fetch cette page
+
+
+Etape pour fetch une subpage ; On vérifie que la page est un container ou non. Si ce n'est pas le cas on la yield
+
+Si la page contient d'autre page, on fetch cette page aussi. 
