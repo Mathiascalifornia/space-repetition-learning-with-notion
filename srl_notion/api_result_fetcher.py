@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict, Generator, Any, Tuple
+from collections import defaultdict, deque
 
 import requests
 from pydantic import HttpUrl
@@ -104,7 +105,7 @@ class ResultFetcher:
                     page_id=subpage_id, subject_name=subject_name
                 )
 
-    def main(self) -> Generator[Tuple[str, Dict[str, HttpUrl]], None, None]:
+    def iterative_fetching(self) -> Generator[Tuple[str, Dict[str, HttpUrl]], None, None]:
         initial_dict = self.create_initial_dict(raw_response=self.raw_response)
 
         for main_page_name, main_page_id in initial_dict.items():
@@ -113,3 +114,25 @@ class ResultFetcher:
             yield from self.fetch_all_pages(
                 page_id=main_page_id, subject_name=main_page_name
             )
+
+    @staticmethod
+    def structure_gen_results(gen:Generator) -> List[Tuple[Dict[str, str]]]:
+        return [res for res in gen]
+
+    @staticmethod
+    def prepare_output(fetcher_results:List[Tuple[Dict[str, str]]]) -> defaultdict[str, deque]:
+        
+        defdict_deque = defaultdict(deque)
+        
+        subject:str
+        dict_page:Dict[str, HttpUrl]
+        for subject, dict_page in fetcher_results:
+            defdict_deque[subject].append(dict_page)
+            
+        return defdict_deque
+
+    def main(self) -> defaultdict[str, deque]:
+        gen = self.iterative_fetching()
+        fetcher_results:List[Tuple[Dict[str, str]]] = ResultFetcher.structure_gen_results(gen=gen)
+        return ResultFetcher.prepare_output(fetcher_results=fetcher_results)
+    
