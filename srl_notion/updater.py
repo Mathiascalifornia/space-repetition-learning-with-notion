@@ -33,12 +33,6 @@ class DictDequeueStructureUpdater:
             )
         )
 
-    # Idée de timeline ;
-    # On crée des sets avec des tuples de trois éléments ; subject, nom de la page, clef
-    # On fait ça pour les deux data structures (res fetcher et celle en mémoire)
-    # Si une page est à rajouter ou supprimer, ce sera simple d'accès grâce au premier élément
-    # On update la structure en mémoire, pas le résultat de res fetcher
-
     def update_and_save(self) -> defaultdict[str, deque]:
 
         self.saved_data_structure: defaultdict[str, deque] = (
@@ -76,8 +70,6 @@ class DictDequeueStructureUpdater:
             for page_name, url in dict_.items()
         }
 
-    # 1er test ; Une page supprimée
-    # 2 ème test ; Une page ajoutée
 
     @staticmethod
     def remove_new_pages(
@@ -96,9 +88,18 @@ class DictDequeueStructureUpdater:
                 subject = tuple_[0]
                 page_name = tuple_[1]
                 url = tuple_[2]
+                
+                print(subject, page_name , url)
+                    
+                dict_:dict
+                for dict_ in list(saved_data_structure[subject]): # Turn the structure to a list, to make it a copy of the object and not the actual object (in order to be able to use the remove method during iteration)
+                    
+                    res_key = dict_.get(page_name, [])
 
-                if url == saved_data_structure[subject][page_name]:
-                    del saved_data_structure[subject][page_name]
+                    if res_key:
+ 
+                        if url == res_key: # We want to be sure that, even if two page names are similar the URL is different
+                            saved_data_structure[subject].remove(dict_)
 
         return saved_data_structure
 
