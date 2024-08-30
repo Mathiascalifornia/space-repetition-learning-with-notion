@@ -3,7 +3,8 @@ import pathlib
 from typing import Any
 from collections import defaultdict, deque
 
-from pydantic import HttpUrl
+
+import utils
 
 
 class DictDequeueStructureUpdater:
@@ -13,13 +14,15 @@ class DictDequeueStructureUpdater:
     and return the structured with the same order and updated (with the new pages, and without the deleted ones)
     """
 
-    PATH_DATA_STRUCTURE = pathlib.Path.cwd() / "data_structure.pkl"
+    PATH_DATA_STRUCTURE = pathlib.Path.cwd() / "data" / "data_structure.pkl"
 
     def __init__(self, response_result_fetcher: defaultdict[str, deque]):
 
         self.response_result_fetcher = response_result_fetcher
         self.saved_data_structure: defaultdict[str, deque] = (
-            DictDequeueStructureUpdater._load_in_memory_data_structure()
+            DictDequeueStructureUpdater._load_in_memory_data_structure(
+                path_data_structure=DictDequeueStructureUpdater.PATH_DATA_STRUCTURE
+            )
         )
 
         self.converted_saved_data_structure: set[tuple] = (
@@ -51,7 +54,7 @@ class DictDequeueStructureUpdater:
             )
         )
 
-        DictDequeueStructureUpdater.save_pickle(
+        utils.save_pickle(
             object_=self.saved_data_structure,
             path_to_save=DictDequeueStructureUpdater.PATH_DATA_STRUCTURE,
         )
@@ -70,7 +73,6 @@ class DictDequeueStructureUpdater:
             for page_name, url in dict_.items()
         }
 
-
     @staticmethod
     def remove_new_pages(
         converted_saved_data_structure: set[tuple],
@@ -88,17 +90,19 @@ class DictDequeueStructureUpdater:
                 subject = tuple_[0]
                 page_name = tuple_[1]
                 url = tuple_[2]
-                
-                print(subject, page_name , url)
-                    
-                dict_:dict
-                for dict_ in list(saved_data_structure[subject]): # Turn the structure to a list, to make it a copy of the object and not the actual object (in order to be able to use the remove method during iteration)
-                    
+
+                dict_: dict
+                for dict_ in list(
+                    saved_data_structure[subject]
+                ):  # Turn the structure to a list, to make it a copy of the object and not the actual object (in order to be able to use the remove method during iteration)
+
                     res_key = dict_.get(page_name, [])
 
                     if res_key:
- 
-                        if url == res_key: # We want to be sure that, even if two page names are similar the URL is different
+
+                        if (
+                            url == res_key
+                        ):  # We want to be sure that, even if two page names are similar the URL is different
                             saved_data_structure[subject].remove(dict_)
 
         return saved_data_structure
@@ -124,17 +128,5 @@ class DictDequeueStructureUpdater:
         return saved_data_structure
 
     @staticmethod
-    def _load_in_memory_data_structure(
-        path_data_structure=pathlib.Path.cwd() / "data_structure.pkl",
-    ) -> defaultdict[str, deque]:
-        return DictDequeueStructureUpdater.load_pickle(path_object=path_data_structure)
-
-    @staticmethod
-    def load_pickle(path_object: pathlib.Path) -> Any:
-        with open(path_object, "rb") as f:  # rb -> Read Binary
-            return pickle.load(f)
-
-    @staticmethod
-    def save_pickle(object_: Any, path_to_save: pathlib.Path) -> None:
-        with open(path_to_save, "wb") as f:
-            pickle.dump(object_, f)
+    def _load_in_memory_data_structure(path_data_structure) -> defaultdict[str, deque]:
+        return utils.load_pickle(path_object=path_data_structure)
