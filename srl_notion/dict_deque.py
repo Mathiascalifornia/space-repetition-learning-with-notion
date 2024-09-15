@@ -22,6 +22,12 @@ class DictQueueStructure:
             for key_ in self.data_structure:
                 random.shuffle(self.data_structure.get(key_))
 
+    def get_random_key(self) -> str:
+        return random.choice(tuple(self.data_structure.keys()))
+
+    def get_last_element_of_deque(self, key: str) -> dict:
+        return self.data_structure[key][-1]
+
     def shift_last_to_first(self, key_: str):
         dequeue_: deque = self.data_structure.get(key_)
         dequeue_.appendleft(dequeue_.pop())

@@ -1,8 +1,14 @@
 from collections import defaultdict, deque
 import pathlib
+import atexit
 import re
 
 import utils
+from dict_deque import DictQueueStructure
+
+
+# TODO 
+# Blow this class into two separate classes
 
 
 class InterfaceUser:
@@ -18,24 +24,76 @@ class InterfaceUser:
         if base_option
     ]
 
-    PATH_DICT_COUNT = pathlib.Path.cwd() / "data" / "count_dict_structure.pkl"
+    PATH_DATA_FOLDER = pathlib.Path.cwd() / "data"
+    PATH_DATA_STRUCTURE = PATH_DATA_FOLDER / "data_structure.pkl"
+    PATH_DICT_COUNT = PATH_DATA_FOLDER / "count_dict_structure.pkl"
+
+    PROPAL_STRING = "Type 'N' if you don't want to see this page, any other keystroke otherwise : {} ?"
+    ACCEPTANCE_STRING = "Happy learning ; {}"
+
+    utils = utils
 
     def __init__(self, updated_data_structure: defaultdict[str, deque]):
         self.updated_data_structure = updated_data_structure
 
+        atexit.register(
+            self._save_data_structure_at_exit()
+        )  # Save the data structure at exit
+
+    def _save_data_structure_at_exit(self) -> None:
+        if hasattr(self, "data_structure_with_methods"):
+            InterfaceUser.utils.save_pickle(
+                object_=self.data_structure_with_methods.data_structure,
+                path_to_save=InterfaceUser.PATH_DATA_FOLDER,
+            )
+
+            print(
+                f"Exiting the program. The up to date data structure has been saved in '{InterfaceUser.PATH_DATA_FOLDER}'."
+            )
+
+        if hasattr(self, "count_dict"):
+            InterfaceUser.utils.save_pickle(
+                object_=self.count_dict, 
+                path_to_save=InterfaceUser.PATH_DICT_COUNT
+            )
+
+    def case_0(self):
+
+        random_key: str = self.data_structure_with_methods.get_random_key()
+        to_propose: dict = self.data_structure_with_methods.get_last_element_of_deque(
+            key=random_key
+        )
+        subject = tuple(to_propose.keys())[0]
+
+        propal_input = input(InterfaceUser.PROPAL_STRING.format(subject))
+
+        if propal_input.strip().upper() == "N":
+            self.data_structure_with_methods.randomly_resinsert_last_element(
+                key_=subject
+            )
+            self.case_0()  # Recursive call
+        else:
+            print(InterfaceUser.ACCEPTANCE_STRING.format(to_propose[subject]))
+            self.data_structure_with_methods.shift_last_to_first(key_=random_key)
+            self.count_dict[subject] += 1
+
     def main(self):
 
-        count_dict: dict[str, int] = InterfaceUser.update_or_create_count_dict(
+        self.count_dict: dict[str, int] = InterfaceUser.create_if_needed_and_return_count_dict(
             updated_data_structure=self.updated_data_structure,
             path_pickle_dict=InterfaceUser.PATH_DICT_COUNT,
         )
         menu = InterfaceUser.create_menu(
-            updated_data_structure=self.updated_data_structure, count_dict=count_dict
+            updated_data_structure=self.updated_data_structure, count_dict=self.count_dict
         )
 
         mapping_choices = InterfaceUser.create_mapping_user_choices(menu=menu)
 
         all_possible_choices = tuple(mapping_choices.keys())
+
+        self.data_structure_with_methods = DictQueueStructure(
+            data_structure=self.updated_data_structure
+        )
 
         while True:
 
@@ -50,7 +108,7 @@ class InterfaceUser:
 
                 # Those will be the built in mapping logics
                 case "0":
-                    pass  # Random choice
+                    self.case_0()
 
                 case "1":
                     pass
@@ -68,7 +126,7 @@ class InterfaceUser:
         # return mapping_choices
 
     @staticmethod
-    def update_or_create_count_dict(
+    def create_if_needed_and_return_count_dict(
         updated_data_structure: defaultdict[str, deque], path_pickle_dict: pathlib.Path
     ) -> dict[str, int]:
         """
