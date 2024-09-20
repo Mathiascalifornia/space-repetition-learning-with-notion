@@ -8,6 +8,7 @@ from dict_deque import DictQueueStructure
 
 
 # TODO 
+# Remember to add the updated menu at strategic points
 # Blow this class into two separate classes
 
 
@@ -17,7 +18,7 @@ class InterfaceUser:
     Take the up to date data structure, modify it as the user interact with it
     """
 
-    BASE_MENU = "{}) All subjects\n{}) Shuffle the order for the current scope\n{}) Delete a subject from this session\n{}) Back to the default scope\n"
+    BASE_MENU = "{}) Get a page from the current scope\n{}) Shuffle the order for a subject\n{}) Delete a subject from this session\n{}) Back to the default scope\n"
     BUILT_IN_OPTIONS = [
         base_option.replace("{}) ", "")
         for base_option in BASE_MENU.split("\n")
@@ -35,6 +36,7 @@ class InterfaceUser:
 
     def __init__(self, updated_data_structure: defaultdict[str, deque]):
         self.updated_data_structure = updated_data_structure
+        self.deleted_from_session_subjects = set()
 
         atexit.register(
             self._save_data_structure_at_exit()
@@ -57,9 +59,12 @@ class InterfaceUser:
                 path_to_save=InterfaceUser.PATH_DICT_COUNT
             )
 
-    def case_0(self):
+    def case_0_full_scope(self):
 
         random_key: str = self.data_structure_with_methods.get_random_key()
+        while random_key in self.deleted_from_session_subjects:
+            random_key: str = self.data_structure_with_methods.get_random_key()
+
         to_propose: dict = self.data_structure_with_methods.get_last_element_of_deque(
             key=random_key
         )
@@ -71,11 +76,24 @@ class InterfaceUser:
             self.data_structure_with_methods.randomly_resinsert_last_element(
                 key_=subject
             )
-            self.case_0()  # Recursive call
+            self.case_0_full_scope()  # Recursive call
         else:
             print(InterfaceUser.ACCEPTANCE_STRING.format(to_propose[subject]))
             self.data_structure_with_methods.shift_last_to_first(key_=random_key)
             self.count_dict[subject] += 1
+
+    def case_1_shuffle_a_subject(self):
+        
+        input_shuffle = input("Type the name of the subject you want to shuffle.").strip()
+        
+        while input_shuffle not in self.count_dict:
+            all_subject_to_display = ' - '.join(list(self.count_dict.keys()))
+            input_shuffle = input(f"This is not right. The subject has to be in the following list of subjects ; {all_subject_to_display}.")
+        
+        self.data_structure_with_methods.random_shuffle(key_=input_shuffle)
+
+
+
 
     def main(self):
 
@@ -108,12 +126,14 @@ class InterfaceUser:
 
                 # Those will be the built in mapping logics
                 case "0":
-                    self.case_0()
+                    self.case_0_full_scope()
+
 
                 case "1":
-                    pass
+                    self.case_1_shuffle_a_subject()
 
                 case "2":
+                    # Faire en sorte que l'utilisateur ne supprime pas tout
                     pass
 
                 case "3":
