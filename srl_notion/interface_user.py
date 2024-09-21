@@ -46,7 +46,7 @@ class InterfaceUser:
         )
 
         atexit.register(
-            self._save_data_structure_at_exit()
+            self._save_data_structure_at_exit
         )  # Save the data structure at exit
 
     def _save_data_structure_at_exit(self) -> None:
@@ -74,14 +74,10 @@ class InterfaceUser:
 
         return " - ".join(list(filtered_count_dict.keys()))
 
-    def case_0_full_scope(self):
-
-        random_key: str = self.data_structure_with_methods.get_random_key()
-        while random_key in self.deleted_from_session_subjects:
-            random_key: str = self.data_structure_with_methods.get_random_key()
+    def propose_a_page(self, key_: str):
 
         to_propose: dict = self.data_structure_with_methods.get_last_element_of_deque(
-            key=random_key
+            key=key_
         )
         subject = tuple(to_propose.keys())[0]
 
@@ -91,11 +87,19 @@ class InterfaceUser:
             self.data_structure_with_methods.randomly_resinsert_last_element(
                 key_=subject
             )
-            self.case_0_full_scope()  # Recursive call
+            self.propose_a_page()  # Recursive call
         else:
             print(InterfaceUser.ACCEPTANCE_STRING.format(to_propose[subject]))
-            self.data_structure_with_methods.shift_last_to_first(key_=random_key)
-            self.count_dict[subject] += 1
+            self.data_structure_with_methods.shift_last_to_first(key_=key_)
+            self.count_dict[key_] += 1
+
+    def case_0_full_scope(self):
+
+        random_key: str = self.data_structure_with_methods.get_random_key()
+        while random_key in self.deleted_from_session_subjects:
+            random_key: str = self.data_structure_with_methods.get_random_key()
+
+        self.propose_a_page(key_=random_key)
 
     def case_1_shuffle_a_subject(self):
 
@@ -134,8 +138,28 @@ class InterfaceUser:
 
         self.deleted_from_session_subjects = {}
         print(
-            f"The session have been reloaded ! Now you can choose between all those subjects ; {self.get_available_subjects()}"
+            f"The session have been reloaded ! Now you can choose between all those subjects :\n {self.get_available_subjects()}"
         )
+
+    def case_all_subjects_from_current_scope(self):
+        updated_mapping_dict: dict = InterfaceUser.get_updated_version_of_mapping_dict(
+            mapping_dict=self.mapping_dict,
+            deleted_from_session_subjects=self.deleted_from_session_subjects,
+        )
+        updated_mapping_dict_str: str = InterfaceUser.get_updated_mapping_dict_str(
+            updated_mapping_dict
+        )
+
+        input_subject = input(
+            f"Choose the number related to a subject from the following list ; {updated_mapping_dict_str}"
+        )
+
+        while input_subject not in updated_mapping_dict:
+            input_subject = input(
+                f"Wrong input ; choose from this list :\n {updated_mapping_dict_str}"
+            )
+
+        self.propose_a_page(key_=self.updated_data_structure[input_subject])
 
     def main(self):
 
@@ -144,9 +168,9 @@ class InterfaceUser:
             count_dict=self.count_dict,
         )
 
-        mapping_choices = InterfaceUser.create_mapping_user_choices(menu=menu)
+        self.mapping_dict = InterfaceUser.create_mapping_user_choices(menu=menu)
 
-        all_possible_choices = tuple(mapping_choices.keys())
+        all_possible_choices = tuple(self.mapping_dict.keys())
 
         self.data_structure_with_methods = DictQueueStructure(
             data_structure=self.updated_data_structure
@@ -176,11 +200,10 @@ class InterfaceUser:
                 case "3":
                     self.case_3_reload_the_whole_scope()
 
-                # Then, it's a subset chosen and we have to filter based on that
                 case _:
-                    pass
+                    self.case_all_subjects_from_current_scope()
 
-        # return mapping_choices
+            print("\n--------------------------------------------------\n")
 
     @staticmethod
     def create_if_needed_and_return_count_dict(
@@ -251,3 +274,20 @@ class InterfaceUser:
             to_populate_dict[to_add_dict_key] = to_add_dict_value
 
         return to_populate_dict
+
+    @staticmethod
+    def get_updated_version_of_mapping_dict(
+        mapping_dict: dict, deleted_from_session_subjects: set
+    ) -> dict:
+        return {
+            key_: value
+            for key_, value in mapping_dict.items()
+            if key_ not in deleted_from_session_subjects
+        }
+
+    @staticmethod
+    def get_updated_mapping_dict_str(updated_mapping_dict: dict) -> str:
+
+        return "\n".join(
+            [f"{key_} : {value} |" for key_, value in updated_mapping_dict.items()]
+        )
