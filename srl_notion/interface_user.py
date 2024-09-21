@@ -7,7 +7,7 @@ import utils
 from dict_deque import DictQueueStructure
 
 
-# TODO 
+# TODO
 # Remember to add the updated menu at strategic points
 # Blow this class into two separate classes
 
@@ -38,6 +38,13 @@ class InterfaceUser:
         self.updated_data_structure = updated_data_structure
         self.deleted_from_session_subjects = set()
 
+        self.count_dict: dict[str, int] = (
+            InterfaceUser.create_if_needed_and_return_count_dict(
+                updated_data_structure=self.updated_data_structure,
+                path_pickle_dict=InterfaceUser.PATH_DICT_COUNT,
+            )
+        )
+
         atexit.register(
             self._save_data_structure_at_exit()
         )  # Save the data structure at exit
@@ -55,9 +62,17 @@ class InterfaceUser:
 
         if hasattr(self, "count_dict"):
             InterfaceUser.utils.save_pickle(
-                object_=self.count_dict, 
-                path_to_save=InterfaceUser.PATH_DICT_COUNT
+                object_=self.count_dict, path_to_save=InterfaceUser.PATH_DICT_COUNT
             )
+
+    def get_available_subjects(self) -> str:
+        filtered_count_dict = {
+            key: val
+            for key, val in self.count_dict
+            if key not in self.deleted_from_session_subjects
+        }
+
+        return " - ".join(list(filtered_count_dict.keys()))
 
     def case_0_full_scope(self):
 
@@ -83,26 +98,50 @@ class InterfaceUser:
             self.count_dict[subject] += 1
 
     def case_1_shuffle_a_subject(self):
-        
-        input_shuffle = input("Type the name of the subject you want to shuffle.").strip()
-        
+
+        input_shuffle = input(
+            "Type the name of the subject you want to shuffle."
+        ).strip()
+
         while input_shuffle not in self.count_dict:
-            all_subject_to_display = ' - '.join(list(self.count_dict.keys()))
-            input_shuffle = input(f"This is not right. The subject has to be in the following list of subjects ; {all_subject_to_display}.")
-        
+            input_shuffle = input(
+                f"This is not right. The subject has to be in the following list of subjects ; {self.get_available_subjects()}.\n"
+            )
+
         self.data_structure_with_methods.random_shuffle(key_=input_shuffle)
+        print("Shuffle done !")
 
+    def case_2_delete_a_subject(self):
 
+        input_deletion = input(
+            "Type the name of the subject you want to delete from this session : "
+        ).strip()
+        while input_deletion not in self.count_dict:
+            input_deletion = input(
+                f"Unknowed subject. Available subject are ; {self.get_available_subjects()}"
+            )
 
+        if len(self.deleted_from_session_subjects) == len(self.count_dict):
+            print(
+                "You cannot delete every subject ! Reload the session or quit the program."
+            )
+
+        else:
+            self.deleted_from_session_subjects.add(input_deletion)
+            print(f"Subject : '{input_deletion}' removed from the current session")
+
+    def case_3_reload_the_whole_scope(self):
+
+        self.deleted_from_session_subjects = {}
+        print(
+            f"The session have been reloaded ! Now you can choose between all those subjects ; {self.get_available_subjects()}"
+        )
 
     def main(self):
 
-        self.count_dict: dict[str, int] = InterfaceUser.create_if_needed_and_return_count_dict(
-            updated_data_structure=self.updated_data_structure,
-            path_pickle_dict=InterfaceUser.PATH_DICT_COUNT,
-        )
         menu = InterfaceUser.create_menu(
-            updated_data_structure=self.updated_data_structure, count_dict=self.count_dict
+            updated_data_structure=self.updated_data_structure,
+            count_dict=self.count_dict,
         )
 
         mapping_choices = InterfaceUser.create_mapping_user_choices(menu=menu)
@@ -128,16 +167,14 @@ class InterfaceUser:
                 case "0":
                     self.case_0_full_scope()
 
-
                 case "1":
                     self.case_1_shuffle_a_subject()
 
                 case "2":
-                    # Faire en sorte que l'utilisateur ne supprime pas tout
-                    pass
+                    self.case_2_delete_a_subject()
 
                 case "3":
-                    pass
+                    self.case_3_reload_the_whole_scope()
 
                 # Then, it's a subset chosen and we have to filter based on that
                 case _:
