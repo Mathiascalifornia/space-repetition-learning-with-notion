@@ -1,5 +1,7 @@
 from collections import deque, defaultdict
 
+import pretty_errors
+
 from api_connection import NotionAPIConnector
 from api_result_fetcher import ResultFetcher
 from updater import DictDequeueStructureUpdater
@@ -24,4 +26,5 @@ def main():
 
 
 if __name__ == "__main__":
+    print("\n")
     main()

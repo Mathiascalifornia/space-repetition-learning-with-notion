@@ -8,7 +8,7 @@ from dict_deque import DictQueueStructure
 
 
 # TODO
-# Remember to add the updated menu at strategic points
+# Create the updated menu at the end of the loop
 # Blow this class into two separate classes
 
 
@@ -25,11 +25,11 @@ class InterfaceUser:
         if base_option
     ]
 
-    PATH_DATA_FOLDER = pathlib.Path.cwd() / "data"
+    PATH_DATA_FOLDER = pathlib.Path(__file__).resolve().parent / "data"
     PATH_DATA_STRUCTURE = PATH_DATA_FOLDER / "data_structure.pkl"
     PATH_DICT_COUNT = PATH_DATA_FOLDER / "count_dict_structure.pkl"
 
-    PROPAL_STRING = "Type 'N' if you don't want to see this page, any other keystroke otherwise : {} ?"
+    PROPAL_STRING = "Type 'N' if you don't want to see this page, any other keystroke otherwise : {} "
     ACCEPTANCE_STRING = "Happy learning ; {}"
 
     utils = utils
@@ -53,7 +53,7 @@ class InterfaceUser:
         if hasattr(self, "data_structure_with_methods"):
             InterfaceUser.utils.save_pickle(
                 object_=self.data_structure_with_methods.data_structure,
-                path_to_save=InterfaceUser.PATH_DATA_FOLDER,
+                path_to_save=InterfaceUser.PATH_DATA_STRUCTURE,
             )
 
             print(
@@ -68,7 +68,7 @@ class InterfaceUser:
     def get_available_subjects(self) -> str:
         filtered_count_dict = {
             key: val
-            for key, val in self.count_dict
+            for key, val in self.count_dict.items()
             if key not in self.deleted_from_session_subjects
         }
 
@@ -81,7 +81,7 @@ class InterfaceUser:
         )
         subject = tuple(to_propose.keys())[0]
 
-        propal_input = input(InterfaceUser.PROPAL_STRING.format(subject))
+        propal_input = input(InterfaceUser.PROPAL_STRING.format(key_ + " >> " + subject))
 
         if propal_input.strip().upper() == "N":
             self.data_structure_with_methods.randomly_resinsert_last_element(
@@ -89,7 +89,11 @@ class InterfaceUser:
             )
             self.propose_a_page()  # Recursive call
         else:
+
+            print("\n")
+            print("-------------------------------------")
             print(InterfaceUser.ACCEPTANCE_STRING.format(to_propose[subject]))
+            print("-------------------------------------")
             self.data_structure_with_methods.shift_last_to_first(key_=key_)
             self.count_dict[key_] += 1
 
@@ -104,23 +108,32 @@ class InterfaceUser:
     def case_1_shuffle_a_subject(self):
 
         input_shuffle = input(
-            "Type the name of the subject you want to shuffle."
+            "Type the number of the subject you want to shuffle."
         ).strip()
 
-        while input_shuffle not in self.count_dict:
+        updated_mapping_dict = InterfaceUser.get_updated_version_of_mapping_dict(mapping_dict=self.mapping_dict, 
+                                                                                 deleted_from_session_subjects=self.deleted_from_session_subjects)
+        
+        while input_shuffle not in updated_mapping_dict:
             input_shuffle = input(
                 f"This is not right. The subject has to be in the following list of subjects ; {self.get_available_subjects()}.\n"
             )
 
-        self.data_structure_with_methods.random_shuffle(key_=input_shuffle)
+        self.data_structure_with_methods.random_shuffle(key_=updated_mapping_dict[input_shuffle])
+        print("\n")
+        print('--------------------------------------------------')
         print("Shuffle done !")
 
     def case_2_delete_a_subject(self):
 
         input_deletion = input(
-            "Type the name of the subject you want to delete from this session : "
+            "Type the number of the subject you want to delete from this session : "
         ).strip()
-        while input_deletion not in self.count_dict:
+
+        updated_mapping_dict = InterfaceUser.get_updated_version_of_mapping_dict(mapping_dict=self.mapping_dict, 
+                                                                                 deleted_from_session_subjects=self.deleted_from_session_subjects)
+
+        while input_deletion not in updated_mapping_dict:
             input_deletion = input(
                 f"Unknowed subject. Available subject are ; {self.get_available_subjects()}"
             )
@@ -131,17 +144,18 @@ class InterfaceUser:
             )
 
         else:
-            self.deleted_from_session_subjects.add(input_deletion)
-            print(f"Subject : '{input_deletion}' removed from the current session")
+            subject = updated_mapping_dict[input_deletion]
+            self.deleted_from_session_subjects.add(subject)
+            print(f"Subject : '{subject}' removed from the current session")
 
     def case_3_reload_the_whole_scope(self):
 
-        self.deleted_from_session_subjects = {}
+        self.deleted_from_session_subjects = set()
         print(
             f"The session have been reloaded ! Now you can choose between all those subjects :\n {self.get_available_subjects()}"
         )
 
-    def case_all_subjects_from_current_scope(self):
+    def case_all_subjects_from_current_scope(self, input_user:str):
         updated_mapping_dict: dict = InterfaceUser.get_updated_version_of_mapping_dict(
             mapping_dict=self.mapping_dict,
             deleted_from_session_subjects=self.deleted_from_session_subjects,
@@ -150,16 +164,13 @@ class InterfaceUser:
             updated_mapping_dict
         )
 
-        input_subject = input(
-            f"Choose the number related to a subject from the following list ; {updated_mapping_dict_str}"
-        )
 
-        while input_subject not in updated_mapping_dict:
-            input_subject = input(
+        while input_user not in updated_mapping_dict:
+            input_user = input(
                 f"Wrong input ; choose from this list :\n {updated_mapping_dict_str}"
             )
 
-        self.propose_a_page(key_=self.updated_data_structure[input_subject])
+        self.propose_a_page(key_=self.updated_data_structure[input_user])
 
     def main(self):
 
@@ -169,6 +180,8 @@ class InterfaceUser:
         )
 
         self.mapping_dict = InterfaceUser.create_mapping_user_choices(menu=menu)
+
+        menu += "\n:"
 
         all_possible_choices = tuple(self.mapping_dict.keys())
 
@@ -201,7 +214,7 @@ class InterfaceUser:
                     self.case_3_reload_the_whole_scope()
 
                 case _:
-                    self.case_all_subjects_from_current_scope()
+                    self.case_all_subjects_from_current_scope(user_input)
 
             print("\n--------------------------------------------------\n")
 
@@ -289,5 +302,8 @@ class InterfaceUser:
     def get_updated_mapping_dict_str(updated_mapping_dict: dict) -> str:
 
         return "\n".join(
-            [f"{key_} : {value} |" for key_, value in updated_mapping_dict.items()]
+            [f"{key_} : {value}" 
+             for key_, value 
+             in updated_mapping_dict.items() 
+             if key_ not in ("0", "1", "2", "3")]
         )
