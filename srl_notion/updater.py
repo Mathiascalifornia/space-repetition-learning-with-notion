@@ -14,7 +14,9 @@ class DictDequeueStructureUpdater:
     and return the structured with the same order and updated (with the new pages, and without the deleted ones)
     """
 
-    PATH_DATA_STRUCTURE = pathlib.Path(__file__).resolve().parent / "data" / "data_structure.pkl"
+    PATH_DATA_STRUCTURE = (
+        pathlib.Path(__file__).resolve().parent / "data" / "data_structure.pkl"
+    )
 
     def __init__(self, response_result_fetcher: defaultdict[str, deque]):
 
