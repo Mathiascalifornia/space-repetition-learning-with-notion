@@ -7,8 +7,8 @@ import utils
 from dict_deque import DictQueueStructure
 
 # BUG
-# Mauvais menu, des numéros sons venu se greffer au lieu de sujets à la fin
-# Problème de logique dans les N session ago
+# Problème de logique dans les N session ago -> changer pour mettre une date à la place
+# Le menu ne s'affiche pas dynamiquement (au fil des éléments supprimés) -> re-créer le menu dynamiquement via une fonction dans la boucle while en intégrant les éléments supprimés
 
 # TODO
 # Create the updated menu at the end of the loop
@@ -100,7 +100,7 @@ class InterfaceUser:
             print("\n")
             print("-------------------------------------")
             print(InterfaceUser.ACCEPTANCE_STRING.format(to_propose[page_name]))
-            print("-------------------------------------")
+            print("-------------------------------------\n")
             self.data_structure_with_methods.shift_last_to_first(key_=subject)
             self.count_dict[subject] += 1
 
@@ -116,7 +116,7 @@ class InterfaceUser:
     def case_1_shuffle_a_subject(self):
 
         input_shuffle = input(
-            "Type the number of the subject you want to shuffle."
+            "\nType the number of the subject you want to shuffle ; "
         ).strip()
 
         updated_mapping_dict = InterfaceUser.get_updated_version_of_mapping_dict(mapping_dict=self.mapping_dict, 
@@ -130,7 +130,8 @@ class InterfaceUser:
         self.data_structure_with_methods.random_shuffle(key_=updated_mapping_dict[input_shuffle])
         print("\n")
         print('--------------------------------------------------')
-        print("Shuffle done !")
+        print("Shuffle done !\n")
+        print('--------------------------------------------------')
 
     def case_2_delete_a_subject(self):
 
@@ -153,8 +154,9 @@ class InterfaceUser:
 
         else:
             subject = updated_mapping_dict[input_deletion]
-            self.deleted_from_session_subjects.add(subject)
-            print(f"Subject : '{subject}' removed from the current session")
+            self.deleted_from_session_subjects.add(input_deletion)
+            print(f"\nSubject : '{subject}' removed from the current session\n")
+            print("--------------------------------------------------")
 
     def case_3_reload_the_whole_scope(self):
 
@@ -168,6 +170,11 @@ class InterfaceUser:
             mapping_dict=self.mapping_dict,
             deleted_from_session_subjects=self.deleted_from_session_subjects,
         )
+
+        print("##########################")
+        print(updated_mapping_dict)
+        print(self.deleted_from_session_subjects)
+        print(self.mapping_dict)
         updated_mapping_dict_str: str = InterfaceUser.get_updated_mapping_dict_str(
             updated_mapping_dict
         )
@@ -312,6 +319,5 @@ class InterfaceUser:
         return "\n".join(
             [f"{key_} : {value}" 
              for key_, value 
-             in updated_mapping_dict.items() 
-             if key_ not in ("0", "1", "2", "3")]
+             in updated_mapping_dict.items() ]
         )
