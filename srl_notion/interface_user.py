@@ -6,6 +6,9 @@ import re
 import utils
 from dict_deque import DictQueueStructure
 
+# BUG
+# Mauvais menu, des numéros sons venu se greffer au lieu de sujets à la fin
+# Problème de logique dans les N session ago
 
 # TODO
 # Create the updated menu at the end of the loop
@@ -74,36 +77,41 @@ class InterfaceUser:
 
         return " - ".join(list(filtered_count_dict.keys()))
 
-    def propose_a_page(self, key_: str):
+    def propose_a_page(self, subject: str):
 
-        to_propose: dict = self.data_structure_with_methods.get_last_element_of_deque(
-            key=key_
-        )
-        subject = tuple(to_propose.keys())[0]
+        try:
+            to_propose: dict = self.data_structure_with_methods.get_last_element_of_deque(
+                key=subject
+            )
+        except IndexError:
+            return
+        
+        page_name = tuple(to_propose.keys())[0]
 
-        propal_input = input(InterfaceUser.PROPAL_STRING.format(key_ + " >> " + subject))
+        propal_input = input(InterfaceUser.PROPAL_STRING.format(subject + " >> " + page_name))
 
         if propal_input.strip().upper() == "N":
             self.data_structure_with_methods.randomly_resinsert_last_element(
                 key_=subject
             )
-            self.propose_a_page()  # Recursive call
+            self.propose_a_page(subject)  # Recursive call
         else:
 
             print("\n")
             print("-------------------------------------")
-            print(InterfaceUser.ACCEPTANCE_STRING.format(to_propose[subject]))
+            print(InterfaceUser.ACCEPTANCE_STRING.format(to_propose[page_name]))
             print("-------------------------------------")
-            self.data_structure_with_methods.shift_last_to_first(key_=key_)
-            self.count_dict[key_] += 1
+            self.data_structure_with_methods.shift_last_to_first(key_=subject)
+            self.count_dict[subject] += 1
 
     def case_0_full_scope(self):
 
         random_key: str = self.data_structure_with_methods.get_random_key()
+
         while random_key in self.deleted_from_session_subjects:
             random_key: str = self.data_structure_with_methods.get_random_key()
 
-        self.propose_a_page(key_=random_key)
+        self.propose_a_page(subject=random_key)
 
     def case_1_shuffle_a_subject(self):
 
@@ -170,7 +178,8 @@ class InterfaceUser:
                 f"Wrong input ; choose from this list :\n {updated_mapping_dict_str}"
             )
 
-        self.propose_a_page(key_=self.updated_data_structure[input_user])
+        mapped_key:str = updated_mapping_dict[input_user] # From number to actual subject name
+        self.propose_a_page(subject=mapped_key)
 
     def main(self):
 
@@ -216,7 +225,6 @@ class InterfaceUser:
                 case _:
                     self.case_all_subjects_from_current_scope(user_input)
 
-            print("\n--------------------------------------------------\n")
 
     @staticmethod
     def create_if_needed_and_return_count_dict(
