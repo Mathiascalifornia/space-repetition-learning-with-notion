@@ -8,6 +8,7 @@ import utils
 from dict_deque import DictQueueStructure
 
 # TODO
+# In prod it takes way too long, find where the bottle neck comes from and maybe parallelize 
 # Comestic prints
 # Blow this class into two separate classes
 
@@ -102,7 +103,7 @@ class InterfaceUser:
             print("-------------------------------------\n")
             self.data_structure_with_methods.shift_last_to_first(key_=subject)
 
-            self.count_dict[subject] = datetime.datetime.now().date()
+            self.count_dict[subject] = datetime.datetime.now()
 
     def case_0_full_scope(self):
 
@@ -244,7 +245,7 @@ class InterfaceUser:
         To keep track of the number of session that the user haven't read about a given subject
         """
 
-        placeholder_date = datetime.datetime(year=1900, month=1, day=1)
+        placeholder_date = datetime.datetime(year=1900, month=1, day=1, hour=0, minute=0, second=0)
 
         if not pathlib.Path.exists(path_pickle_dict):
 
