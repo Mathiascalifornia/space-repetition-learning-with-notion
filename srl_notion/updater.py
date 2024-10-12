@@ -1,6 +1,5 @@
-import pickle
+import datetime
 import pathlib
-from typing import Any
 from collections import defaultdict, deque
 
 
@@ -19,19 +18,30 @@ class DictDequeueStructureUpdater:
     )
 
     def __init__(self, response_result_fetcher: defaultdict[str, deque]):
+        
+        print(f"In: {self.__class__.__name__} since {datetime.datetime.now().strftime('%H:%M:%S')}")
 
         self.response_result_fetcher = response_result_fetcher
-        self.saved_data_structure: defaultdict[str, deque] = (
-            DictDequeueStructureUpdater._load_in_memory_data_structure(
-                path_data_structure=DictDequeueStructureUpdater.PATH_DATA_STRUCTURE
+        
+        try:
+            self.saved_data_structure: defaultdict[str, deque] = (
+                DictDequeueStructureUpdater._load_in_memory_data_structure(
+                    path_data_structure=DictDequeueStructureUpdater.PATH_DATA_STRUCTURE
+                )
             )
-        )
 
-        self.converted_saved_data_structure: set[tuple] = (
-            DictDequeueStructureUpdater._convert_data_structure_to_sets_of_tuple(
-                data_structure=self.saved_data_structure
+            self.converted_saved_data_structure: set[tuple] = (
+                DictDequeueStructureUpdater._convert_data_structure_to_sets_of_tuple(
+                    data_structure=self.saved_data_structure
+                )
             )
-        )
+
+        except FileNotFoundError:
+            self.saved_data_structure = None
+            self.converted_saved_data_structure = None
+            print("No data structure in memory")
+
+
         self.converted_response_result_fetcher: set[tuple] = (
             DictDequeueStructureUpdater._convert_data_structure_to_sets_of_tuple(
                 data_structure=self.response_result_fetcher
@@ -39,6 +49,9 @@ class DictDequeueStructureUpdater:
         )
 
     def update_and_save(self) -> defaultdict[str, deque]:
+
+        if not self.saved_data_structure:
+            return self.response_result_fetcher
 
         self.saved_data_structure: defaultdict[str, deque] = (
             DictDequeueStructureUpdater.remove_new_pages(

@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional, List, Dict, Generator, Any, Tuple
 from collections import defaultdict, deque
 
@@ -19,6 +20,7 @@ class ResultFetcher:
     """
 
     def __init__(self, raw_response: dict, headers: dict):
+        print(f"In: {self.__class__.__name__} since {datetime.datetime.now().strftime('%H:%M:%S')}")
         self.raw_response = raw_response
         self.headers = headers
 

@@ -36,6 +36,9 @@ class InterfaceUser:
     utils = utils
 
     def __init__(self, updated_data_structure: defaultdict[str, deque]):
+
+        print(f"In: {self.__class__.__name__} since {datetime.datetime.now().strftime('%H:%M:%S')}")
+
         self.updated_data_structure = updated_data_structure
         self.deleted_from_session_subjects = set()
 
