@@ -48,10 +48,19 @@ class DictDequeueStructureUpdater:
             )
         )
 
+    @staticmethod
+    def delete_empty_keys(data_structure:defaultdict[str, deque]) -> defaultdict[str, deque]:
+        keys_to_remove = [key for key, val in data_structure.items() if val == deque([])]
+
+        for key in keys_to_remove:
+            del data_structure[key]
+
+        return data_structure
+
     def update_and_save(self) -> defaultdict[str, deque]:
 
         if not self.saved_data_structure:
-            return self.response_result_fetcher
+            return DictDequeueStructureUpdater.delete_empty_keys(self.response_result_fetcher)
 
         self.saved_data_structure: defaultdict[str, deque] = (
             DictDequeueStructureUpdater.remove_new_pages(
@@ -74,7 +83,7 @@ class DictDequeueStructureUpdater:
             path_to_save=DictDequeueStructureUpdater.PATH_DATA_STRUCTURE,
         )
 
-        return self.saved_data_structure
+        return DictDequeueStructureUpdater.delete_empty_keys(self.saved_data_structure)
 
     @staticmethod
     def _convert_data_structure_to_sets_of_tuple(

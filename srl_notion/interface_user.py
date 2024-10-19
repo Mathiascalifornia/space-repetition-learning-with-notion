@@ -8,8 +8,7 @@ import utils
 from dict_deque import DictQueueStructure
 
 # TODO
-# In prod it takes way too long, find where the bottle neck comes from and maybe parallelize 
-# Comestic prints
+# BUG with 5 (or data, i don't know which yet)
 # Blow this class into two separate classes
 
 
