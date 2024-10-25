@@ -8,7 +8,6 @@ import utils
 from dict_deque import DictQueueStructure
 
 # TODO
-# BUG with 5 (or data, i don't know which yet)
 # Blow this class into two separate classes
 
 
@@ -36,7 +35,9 @@ class InterfaceUser:
 
     def __init__(self, updated_data_structure: defaultdict[str, deque]):
 
-        print(f"In: {self.__class__.__name__} since {datetime.datetime.now().strftime('%H:%M:%S')}")
+        print(
+            f"In: {self.__class__.__name__} since {datetime.datetime.now().strftime('%H:%M:%S')}"
+        )
 
         self.updated_data_structure = updated_data_structure
         self.deleted_from_session_subjects = set()
@@ -77,7 +78,13 @@ class InterfaceUser:
 
         return " - ".join(list(filtered_count_dict.keys()))
 
-    def propose_a_page(self, subject: str):
+    def propose_a_page(self, subject: str, is_full_scope: bool = False):
+
+        subject:str = (
+            subject
+            if not is_full_scope
+            else self.data_structure_with_methods.get_random_key()
+        )
 
         try:
             to_propose: dict = (
@@ -114,7 +121,7 @@ class InterfaceUser:
         while random_key in self.deleted_from_session_subjects:
             random_key: str = self.data_structure_with_methods.get_random_key()
 
-        self.propose_a_page(subject=random_key)
+        self.propose_a_page(subject=random_key, is_full_scope=True)
 
     def case_1_shuffle_a_subject(self):
 
@@ -247,7 +254,9 @@ class InterfaceUser:
         To keep track of the number of session that the user haven't read about a given subject
         """
 
-        placeholder_date = datetime.datetime(year=1900, month=1, day=1, hour=0, minute=0, second=0)
+        placeholder_date = datetime.datetime(
+            year=1900, month=1, day=1, hour=0, minute=0, second=0
+        )
 
         if not pathlib.Path.exists(path_pickle_dict):
 
