@@ -103,7 +103,7 @@ class InterfaceUser:
             self.data_structure_with_methods.randomly_resinsert_last_element(
                 key_=subject
             )
-            self.propose_a_page(subject)  # Recursive call
+            self.propose_a_page(subject, is_full_scope=is_full_scope)  # Recursive call
         else:
 
             print("\n")
