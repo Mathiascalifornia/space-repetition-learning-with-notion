@@ -10,6 +10,10 @@ from dict_deque import DictQueueStructure
 # TODO
 # Blow this class into two separate classes
 
+# BUG
+# Toujours le ptn de whole scope qui ne me charge qu'un seul sujet quand je dis NON
+# Quand je supprime un sujet, il apparait toujours dans le cas "0 full scope". Mauvaise logique de gestion des éléments supprimés
+
 
 class InterfaceUser:
     """
@@ -80,11 +84,14 @@ class InterfaceUser:
 
     def propose_a_page(self, subject: str, is_full_scope: bool = False):
 
-        subject:str = (
-            subject
-            if not is_full_scope
-            else self.data_structure_with_methods.get_random_key()
-        )
+        if is_full_scope:
+            subject = self.data_structure_with_methods.get_random_key()
+            while self.reverse_mapping_dict.get(
+                subject
+            ) in self.deleted_from_session_subjects or not self.reverse_mapping_dict.get(
+                subject
+            ):
+                subject = self.data_structure_with_methods.get_random_key()
 
         try:
             to_propose: dict = (
@@ -118,7 +125,11 @@ class InterfaceUser:
 
         random_key: str = self.data_structure_with_methods.get_random_key()
 
-        while random_key in self.deleted_from_session_subjects:
+        while self.reverse_mapping_dict.get(
+            random_key
+        ) in self.deleted_from_session_subjects or not self.reverse_mapping_dict.get(
+            random_key
+        ):
             random_key: str = self.data_structure_with_methods.get_random_key()
 
         self.propose_a_page(subject=random_key, is_full_scope=True)
@@ -211,7 +222,12 @@ class InterfaceUser:
                 deleted_from_session_subjects=self.deleted_from_session_subjects,
             )
 
-            self.mapping_dict = InterfaceUser.create_mapping_user_choices(menu=menu)
+            self.mapping_dict: dict = InterfaceUser.create_mapping_user_choices(
+                menu=menu
+            )
+            self.reverse_mapping_dict = {
+                value: key for key, value in self.mapping_dict.items()
+            }
 
             menu += "\n:"
 
