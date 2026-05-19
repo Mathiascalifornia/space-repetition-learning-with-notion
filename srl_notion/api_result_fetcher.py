@@ -1,6 +1,8 @@
 import datetime
+import time
 from typing import Optional, List, Dict, Generator, Any, Tuple
 from collections import defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from pydantic import HttpUrl
@@ -14,8 +16,13 @@ class ResultFetcher:
     GET_PAGE_INFO = "https://api.notion.com/v1/pages/{}"  # Fill with page id
 
     PAGE_COL_NAME = "Pages"
+    MAX_WORKERS = 4
+    REQUEST_TIMEOUT = 10
+    RETRY_STATUS = {429, 500, 502, 503, 504}
+    MAX_RETRIES = 3
+    BACKOFF_FACTOR = 0.5
 
-    """ 
+    """
     Fetch the results of the raw json response (from NotionAPIConnector)
     """
 
@@ -25,6 +32,8 @@ class ResultFetcher:
         )
         self.raw_response = raw_response
         self.headers = headers
+        self.session = requests.Session()
+        self.session.headers.update(headers)
 
     @staticmethod
     def create_initial_dict(raw_response: Dict[str, Any]) -> Dict[str, str]:
@@ -37,33 +46,34 @@ class ResultFetcher:
     def get_response_results(response_json: dict) -> list:
         return response_json.get("results", [])
 
-    @staticmethod
-    def fetch_url(headers: dict, url: HttpUrl) -> Optional[dict]:
-        response = requests.get(url, headers=headers)
+    def fetch_url(self, url: HttpUrl) -> Optional[dict]:
+        for attempt in range(self.MAX_RETRIES):
+            response = self.session.get(url, timeout=self.REQUEST_TIMEOUT)
+            if response.status_code == 200:
+                return response.json()
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            response.raise_for_status()
+            if response.status_code not in self.RETRY_STATUS:
+                response.raise_for_status()
 
-    @staticmethod
-    def fetch_children_from_page(id_: str, headers: dict) -> Optional[List[Dict]]:
+            time.sleep(self.BACKOFF_FACTOR * (2 ** attempt))
+
+        response.raise_for_status()
+
+    def fetch_children_from_page(self, id_: str) -> Optional[List[Dict]]:
         url = ResultFetcher.GET_CHILDREN_URL.format(id_)
-        return ResultFetcher.get_response_results(
-            ResultFetcher.fetch_url(headers=headers, url=url)
-        )
+        page_json = self.fetch_url(url=url)
+        return ResultFetcher.get_response_results(page_json or {})
 
-    @staticmethod
-    def fetch_page_info(id_: str, headers: dict) -> Optional[dict]:
+    def fetch_page_info(self, id_: str) -> Optional[dict]:
         url = ResultFetcher.GET_PAGE_INFO.format(id_)
-        return ResultFetcher.fetch_url(headers=headers, url=url)
+        return self.fetch_url(url=url)
 
     @staticmethod
     def is_it_a_container_page(pages: List[Dict]) -> bool:
         """
         Take the result of the "fetch_children_from_page" method
         """
-        return all(page["type"] == "child_page" for page in pages)
+        return bool(pages) and all(page["type"] == "child_page" for page in pages)
 
     @staticmethod
     def get_page_title(page_info_response: dict) -> str:
@@ -83,33 +93,38 @@ class ResultFetcher:
         self, page_id: str, subject_name: str
     ) -> Generator[Dict[str, Any], None, None]:
         """
-        Recursive method to iterate through all pages and subpages
-        Note : If a page or a subpage is empty, she cannot be yield
+        Iterative method to traverse all pages and subpages.
         """
-        children_results = self.fetch_children_from_page(page_id, self.headers)
+        queue = deque([page_id])
 
-        # Check if the current page is not a container page (doesn't contain only subpages)
-        if not ResultFetcher.is_it_a_container_page(pages=children_results):
-            page_infos: dict = ResultFetcher.fetch_page_info(
-                id_=page_id, headers=self.headers
-            )
-            page_url: HttpUrl = page_infos["url"]
-            page_title: str = ResultFetcher.get_page_title(
-                page_info_response=page_infos
-            )
+        while queue:
+            batch = [queue.popleft() for _ in range(min(len(queue), self.MAX_WORKERS))]
+            page_ids = batch
 
-            yield subject_name, {page_title: page_url}
-
-        # Iterate through the blocks in the children results
-        for block in children_results:
-
-            if block.get("type") == "child_page":
-                subpage_id = block["id"]
-
-                # Recursive call to explore subpages
-                yield from self.fetch_all_pages(
-                    page_id=subpage_id, subject_name=subject_name
+            with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+                children_results_list = list(
+                    executor.map(self.fetch_children_from_page, page_ids)
                 )
+
+            leaf_page_ids = []
+            for current_id, children_results in zip(page_ids, children_results_list):
+                if not ResultFetcher.is_it_a_container_page(pages=children_results):
+                    leaf_page_ids.append(current_id)
+
+                for block in children_results:
+                    if block.get("type") == "child_page":
+                        queue.append(block["id"])
+
+            if leaf_page_ids:
+                with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+                    page_infos_list = list(executor.map(self.fetch_page_info, leaf_page_ids))
+
+                for page_infos in page_infos_list:
+                    page_url: HttpUrl = page_infos["url"]
+                    page_title: str = ResultFetcher.get_page_title(
+                        page_info_response=page_infos
+                    )
+                    yield subject_name, {page_title: page_url}
 
     def iterative_fetching(
         self,
@@ -117,8 +132,6 @@ class ResultFetcher:
         initial_dict = self.create_initial_dict(raw_response=self.raw_response)
 
         for main_page_name, main_page_id in initial_dict.items():
-
-            # Start fetching from the main pages
             yield from self.fetch_all_pages(
                 page_id=main_page_id, subject_name=main_page_name
             )
